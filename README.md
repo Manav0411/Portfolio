@@ -44,7 +44,23 @@ There are TWO implementations and the page picks one at runtime:
    unset OR the Spline scene fails to load. ~2 KB, also pressable.
 
 The fallback is deliberate: the hero must never be empty because a
-third-party runtime didn't load. Copy `.env.local.example` to `.env.local`
+third-party runtime didn't load.
+
+### Editing the Spline scene
+
+Changes only reach the site after **Export -> Public URL -> Update Public URL**
+in Spline. The URL stays the same, so `.env.local` never changes; hard-refresh
+to beat the cache.
+
+Two things cost a lot of round trips to work out, so don't relearn them:
+
+- **The published viewer renders through the PLAY camera, not the editor
+  viewport.** Without one set, Spline picks its own framing and no amount of
+  moving the editor camera changes the published result. The scene has a
+  `Hero Camera` wired up with `setPlayCamera`.
+- **The editor is not a 1:1 preview of the embed.** The published viewer fits
+  the play camera to the viewport differently — the subject renders roughly
+  0.62x the size it reads at in the editor. Frame tighter than looks right. Copy `.env.local.example` to `.env.local`
 and paste the URL to switch to 3D.
 
 **The SVG keycaps are interactive.** A cap presses on click, on Enter/Space when
