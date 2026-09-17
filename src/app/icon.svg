@@ -1,9 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" fill="#16181d"/>
-  <g fill="none" stroke-width="2" stroke-linecap="square">
-    <path d="M7 16 H12" stroke="#fbfbf9"/>
-    <path d="M12 9 V23" stroke="#fbfbf9"/>
-    <path d="M12 9 H25" stroke="#1e6e68"/>
-    <path d="M12 23 H21" stroke="#a9622b"/>
-  </g>
+  <rect width="32" height="32" rx="6" fill="#333333"/>
+  <text x="16" y="22" font-family="Montserrat, Helvetica, sans-serif" font-size="17"
+        font-weight="700" fill="#ffffff" text-anchor="middle">M</text>
 </svg>

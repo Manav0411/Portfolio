@@ -1,32 +1,31 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Newsreader, JetBrains_Mono } from "next/font/google";
+import { Poppins, Montserrat, Caveat } from "next/font/google";
 import { profile } from "@/content/profile";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
-  axes: ["opsz"],
+  weight: ["200", "300", "400", "500", "600", "700"],
 });
 
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
-  style: ["normal", "italic"],
 });
 
-const jetbrains = JetBrains_Mono({
-  variable: "--font-jetbrains",
+const caveat = Caveat({
+  variable: "--font-caveat",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://manavgoel.dev"),
-  title: `${profile.name} — ${profile.role}`,
-  description: profile.thesis,
+  title: `${profile.name} — ${profile.title}`,
+  description: profile.tagline,
   openGraph: {
-    title: `${profile.name} — ${profile.role}`,
-    description: profile.thesis,
+    title: `${profile.name} — ${profile.title}`,
+    description: profile.tagline,
     type: "website",
   },
 };
@@ -35,12 +34,14 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    // The font variables must live on <html>, not <body>: Tailwind's @theme
-    // resolves --font-display/body/mono at :root, so the faces they point at
-    // have to be defined there too or every family silently falls back.
+    // Font variables go on <html>: Tailwind's @theme resolves --font-sans and
+    // friends at :root, so the faces they point at must be defined there too.
     <html
       lang="en"
-      className={`${bricolage.variable} ${newsreader.variable} ${jetbrains.variable}`}
+      // <Splash> stamps data-splash here before paint, so this element is
+      // expected to differ from the server HTML at hydration.
+      suppressHydrationWarning
+      className={`${poppins.variable} ${montserrat.variable} ${caveat.variable}`}
     >
       <body>{children}</body>
     </html>

@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { nav, profile } from "@/content/profile";
+import { nav } from "@/content/profile";
 
 export function Nav() {
   const [stuck, setStuck] = useState(false);
-  const [active, setActive] = useState<string>("");
+  const [active, setActive] = useState("");
 
   useEffect(() => {
-    const onScroll = () => setStuck(window.scrollY > 24);
+    const onScroll = () => setStuck(window.scrollY > 20);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -23,9 +23,13 @@ export function Nav() {
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible[0]) setActive(visible[0].target.id);
+        if (visible[0]) {
+          setActive(visible[0].target.id);
+        } else if (window.scrollY < (sections[0]?.offsetTop ?? 0)) {
+          setActive("");
+        }
       },
-      { rootMargin: "-20% 0px -70% 0px" },
+      { rootMargin: "-15% 0px -70% 0px" },
     );
     sections.forEach((s) => io.observe(s));
     return () => io.disconnect();
@@ -34,54 +38,20 @@ export function Nav() {
   return (
     <header
       className={`sticky top-0 z-50 transition-colors duration-300 ${
-        stuck ? "border-b border-rule bg-paper/92 backdrop-blur-md" : "border-b border-transparent"
+        stuck ? "border-b border-line bg-page/90 backdrop-blur-md" : ""
       }`}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 sm:px-10">
-        <a href="#top" className="mono text-sm font-medium tracking-tight">
-          {profile.mark}
-        </a>
-
-        <nav aria-label="Sections" className="hidden md:block">
-          <ul className="flex items-center gap-7">
-            {nav.map((n) => (
-              <li key={n.id}>
-                <a
-                  href={`#${n.id}`}
-                  aria-current={active === n.id ? "true" : undefined}
-                  className={`mono text-[0.75rem] tracking-wide transition-colors ${
-                    active === n.id ? "text-ink" : "text-ink-3 hover:text-ink"
-                  }`}
-                >
-                  {n.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <a
-          href={`mailto:${profile.email}`}
-          className="mono border border-ink px-3 py-1.5 text-[0.75rem] transition-colors hover:bg-ink hover:text-paper"
-        >
-          Get in touch
-        </a>
-      </div>
-
-      {/* Below md the centred nav is hidden, so the sections get their own rail.
-          Horizontally scrollable rather than a hamburger — five links don't earn a menu. */}
-      <nav
-        aria-label="Sections"
-        className={`md:hidden ${stuck ? "border-t border-rule-soft" : ""}`}
-      >
-        <ul className="flex gap-6 overflow-x-auto px-6 pb-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav aria-label="Sections">
+        <ul className="flex items-center justify-center gap-6 overflow-x-auto px-5 py-5 sm:gap-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {nav.map((n) => (
             <li key={n.id} className="shrink-0">
               <a
                 href={`#${n.id}`}
                 aria-current={active === n.id ? "true" : undefined}
-                className={`mono text-[0.75rem] tracking-wide transition-colors ${
-                  active === n.id ? "text-ink" : "text-ink-3"
+                className={`block border-b-2 pb-0.5 text-[0.9375rem] transition-colors ${
+                  active === n.id
+                    ? "border-ink-2 text-ink-2"
+                    : "border-transparent text-ink-3 hover:text-ink-2"
                 }`}
               >
                 {n.label}

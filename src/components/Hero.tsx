@@ -1,51 +1,58 @@
 import { profile } from "@/content/profile";
-import { RouteDiagram } from "./RouteDiagram";
+import { Keycaps } from "./Keycaps";
 
 export function Hero() {
   return (
-    <section id="top" className="border-b border-rule">
-      <div className="mx-auto max-w-6xl px-6 pt-16 pb-20 sm:px-10 md:pt-24 md:pb-28">
-        <div className="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
-          {/* Left: the claim */}
-          <div className="flex flex-col justify-center">
-            <p className="eyebrow mb-7">
-              {profile.location} · Available 2027
-            </p>
+    <section className="px-6 pt-10 pb-16 sm:px-10 md:pt-16 md:pb-24">
+      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1fr_0.9fr] lg:gap-8">
+        <div>
+          <h1
+            className="text-[clamp(3rem,9vw,6rem)] leading-[1.02] font-bold tracking-tight text-ink"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            <span className="block">{profile.firstName}</span>
+            <span className="block">{profile.lastName}</span>
+          </h1>
 
-            <h1 className="display text-[clamp(3rem,10vw,6.25rem)]">
-              Manav
-              <br />
-              Goel
-            </h1>
+          <p className="mt-4 text-[clamp(1.375rem,3.4vw,2rem)] leading-tight font-light text-ink-2">
+            {profile.title}
+          </p>
 
-            <p className="mt-8 max-w-xl text-[1.0625rem] leading-relaxed text-ink sm:text-[1.1875rem]">
-              {profile.thesis}
-            </p>
+          <p className="mt-6 max-w-md text-[1rem] text-ink-3">{profile.tagline}</p>
 
-            <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3">
-              <a
-                href="#projects"
-                className="mono bg-ink px-4 py-2.5 text-[0.75rem] text-paper transition-opacity hover:opacity-85"
-              >
-                See the work
-              </a>
-              <a href={profile.github} target="_blank" rel="noreferrer" className="mono link-quiet text-[0.75rem]">
-                GitHub ↗
-              </a>
-              <a href={profile.linkedin} target="_blank" rel="noreferrer" className="mono link-quiet text-[0.75rem]">
-                LinkedIn ↗
-              </a>
-              <a href="/Manav_Goel_Resume.pdf" className="mono link-quiet text-[0.75rem]">
-                Résumé (PDF) ↓
-              </a>
-            </div>
-          </div>
-
-          {/* Right: the evidence for the claim, running */}
-          <div className="flex items-center border-t border-rule pt-10 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-16">
-            <RouteDiagram />
+          <div className="mt-9 flex flex-wrap gap-3">
+            <a href="#projects" className="btn btn-solid">
+              View Projects
+            </a>
+            <a href="#contact" className="btn btn-outline">
+              Get in Touch
+            </a>
           </div>
         </div>
+
+        <div className="order-first lg:order-last">
+          <Keycaps className="mx-auto w-full max-w-[26rem] lg:max-w-none" />
+        </div>
+      </div>
+
+      <div className="mt-12 flex flex-col items-center gap-1 md:mt-16">
+        <span className="text-[0.8125rem] text-ink-3">Scroll to explore</span>
+        <svg
+          width="22"
+          height="13"
+          viewBox="0 0 22 13"
+          fill="none"
+          aria-hidden
+          style={{ animation: "bob 2.2s ease-in-out infinite" }}
+        >
+          <path
+            d="M1 1L11 11L21 1"
+            stroke="#666"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
     </section>
   );
