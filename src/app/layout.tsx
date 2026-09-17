@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Poppins, Montserrat, Caveat } from "next/font/google";
+import { Poppins, Montserrat, Zeyada } from "next/font/google";
 import { profile } from "@/content/profile";
 import "./globals.css";
 
@@ -14,9 +14,10 @@ const montserrat = Montserrat({
   subsets: ["latin"],
 });
 
-const caveat = Caveat({
-  variable: "--font-caveat",
+const signature = Zeyada({
+  variable: "--font-signature-face",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -41,7 +42,7 @@ export default function RootLayout({
       // <Splash> stamps data-splash here before paint, so this element is
       // expected to differ from the server HTML at hydration.
       suppressHydrationWarning
-      className={`${poppins.variable} ${montserrat.variable} ${caveat.variable}`}
+      className={`${poppins.variable} ${montserrat.variable} ${signature.variable}`}
     >
       <body>{children}</body>
     </html>

@@ -6,24 +6,20 @@ import { profile } from "@/content/profile";
 // Runs before paint, so the gate never flashes for people who should skip it:
 // anyone on a deep link, and anyone who already went through it this session.
 const DECIDE = `(function(){try{
-var skip = location.hash.length > 1 || sessionStorage.getItem('seen-splash') === '1';
+var skip = location.hash.length > 1;
 document.documentElement.setAttribute('data-splash', skip ? 'hide' : 'show');
 }catch(e){document.documentElement.setAttribute('data-splash','hide');}})();`;
 
 /**
  * The landing gate: signature, role, one button through to the portfolio.
  * The markup always renders — CSS and the script above decide whether it shows,
- * which keeps the server and client HTML identical.
+ * which keeps the server and client HTML identical. Shown on every load of the
+ * bare URL; skipped only for deep links, which have somewhere specific to go.
  */
 export function Splash() {
   const [leaving, setLeaving] = useState(false);
 
   function enter() {
-    try {
-      sessionStorage.setItem("seen-splash", "1");
-    } catch {
-      // private mode — the gate just shows again next time
-    }
     setLeaving(true);
     window.setTimeout(() => {
       document.documentElement.setAttribute("data-splash", "hide");
@@ -39,7 +35,7 @@ export function Splash() {
       >
         <p
           className="text-center text-[clamp(3.5rem,13vw,7.5rem)] leading-[0.95] text-ink-3"
-          style={{ fontFamily: "var(--font-script)" }}
+          style={{ fontFamily: "var(--font-signature)" }}
         >
           <span className="block">{profile.firstName}</span>
           <span className="block pl-[0.4em]">{profile.lastName}</span>
