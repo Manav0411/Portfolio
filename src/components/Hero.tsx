@@ -1,5 +1,5 @@
 import { profile } from "@/content/profile";
-import { Keycaps } from "./Keycaps";
+import { SplineKeycaps } from "./SplineKeycaps";
 
 export function Hero() {
   return (
@@ -31,7 +31,7 @@ export function Hero() {
         </div>
 
         <div className="order-first lg:order-last">
-          <Keycaps className="mx-auto w-full max-w-[26rem] lg:max-w-none" />
+          <SplineKeycaps className="mx-auto aspect-[4/3] w-full max-w-[26rem] lg:max-w-none" />
         </div>
       </div>
 
