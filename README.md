@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# manavgoel.dev
 
-## Getting Started
-
-First, run the development server:
+Personal portfolio. One page, statically rendered, no CMS.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev      # http://localhost:3000
+pnpm build
+pnpm lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Where things live
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Path | What |
+|---|---|
+| `src/content/profile.ts` | **All copy and data.** Edit here, not in components. |
+| `src/app/globals.css` | Design tokens — palette, type roles, reveal animation. |
+| `src/components/RouteDiagram.tsx` | The hero's routing diagram. |
+| `src/components/Section.tsx` | Shared section shell, `Metric`, `Chips`. |
+| `public/Manav_Goel_Resume.pdf` | The résumé the hero links to. |
+| `resumes/` | Source résumés, not published. |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Design notes
 
-## Learn More
+**The two accent colours are a legend, not decoration.** `--color-cold` (teal) marks a
+deterministic path — typed SQL, no model call. `--color-warm` (ochre) marks a path where a
+model ran, and therefore cost time and money. They mean the same thing everywhere they appear,
+including in the hero diagram and on every metric.
 
-To learn more about Next.js, take a look at the following resources:
+**Three typefaces, three jobs.** Bricolage Grotesque for display, Newsreader for prose,
+JetBrains Mono for every number, label and route. Data never renders in the prose face.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The font variables are set on `<html>`, not `<body>` — Tailwind's `@theme` resolves
+`--font-display`/`--font-body`/`--font-mono` at `:root`, so the faces they point at must be
+defined there or every family silently falls back to system sans.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Every number on this page is real** and traceable to a repo's eval harness. If a figure
+changes, change it in `profile.ts` and nowhere else.
