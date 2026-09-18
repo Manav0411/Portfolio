@@ -64,9 +64,10 @@ export function SplineKeycaps({ className = "" }: { className?: string }) {
     ).filter((c): c is SceneObject => Boolean(c));
     const rest = new Map(caps.map((c) => [c, c.position.y]));
 
-    // The scene's MouseDown transition drives a cap down but never brings it
-    // back, so every key would stay sunk. Ease them home on release — that's
-    // what turns a latch into a keypress.
+    // The scene's press transitions (KeyDown for M/A/N/V, MouseDown for clicks)
+    // drive a cap down but never bring it back, so every pressed key would stay
+    // sunk. Ease them home on release — that's what turns a latch into a
+    // keypress.
     let raf = 0;
     let holdTimer = 0;
     function release() {
@@ -93,11 +94,16 @@ export function SplineKeycaps({ className = "" }: { className?: string }) {
 
     window.addEventListener("pointerup", scheduleRelease);
     window.addEventListener("pointercancel", scheduleRelease);
+    window.addEventListener("keyup", scheduleRelease);
+    // A key held down auto-repeats; without this the cap would re-press forever.
+    window.addEventListener("blur", scheduleRelease);
     cleanupRef.current = () => {
       cancelAnimationFrame(raf);
       clearTimeout(holdTimer);
       window.removeEventListener("pointerup", scheduleRelease);
       window.removeEventListener("pointercancel", scheduleRelease);
+      window.removeEventListener("keyup", scheduleRelease);
+      window.removeEventListener("blur", scheduleRelease);
     };
   }
 
