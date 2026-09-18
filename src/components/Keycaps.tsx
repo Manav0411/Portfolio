@@ -4,86 +4,115 @@ import { useCallback, useEffect, useState } from "react";
 
 const LETTERS = ["M", "A", "N", "A", "V"];
 
-// Isometric basis. A runs down-right (the direction the row descends),
-// KEY spans one cap's top face; every face is built from these two vectors.
-const A = { x: 62, y: 34 };
-const KEY = { x: 56, y: 30 };
-const H = 32; // cube height
-const ORIGIN = { x: 30, y: 74 };
-const TRAVEL = 7; // how far a cap sinks when pressed
+// Isometric construction. The top face is a rhombus with half-diagonals
+// (HX, HY); each cap is a tapered prism of height H, and the row steps along
+// STEP so it descends left-to-right.
+const HX = 56;
+const HY = 30;
+const H = 54;          // cap height — tall enough that the front faces carry the form
+const TAPER = 0.76;    // top face relative to the base, the real keycap profile
+const STEP = { x: 58, y: 32 };
+const ORIGIN = { x: 96, y: 96 };
+const TRAVEL = 9;
+
+type Pt = { x: number; y: number };
+const pts = (...p: Pt[]) => p.map((q) => `${q.x},${q.y}`).join(" ");
+
+/** The four corners of a rhombus of the given scale around a centre. */
+function rhombus(c: Pt, s: number) {
+  return {
+    left: { x: c.x - HX * s, y: c.y },
+    front: { x: c.x, y: c.y + HY * s },
+    right: { x: c.x + HX * s, y: c.y },
+    back: { x: c.x, y: c.y - HY * s },
+  };
+}
 
 /**
- * The hero object: five keycaps spelling MANAV, sitting on a rail.
- * Flat isometric SVG rather than a 3D scene — nothing to load, renders
- * identically everywhere, and the caps actually press.
+ * The hero object: five tapered keycaps spelling MANAV on a rail.
  *
- * A cap goes down on click, on Enter/Space when focused, and when the matching
- * letter is typed on a real keyboard. Both A caps answer to the A key.
+ * Flat isometric SVG — a couple of KB, renders instantly, and needs no runtime.
+ * A cap presses when its letter is typed, when it's clicked, and on Enter or
+ * Space while focused.
  */
 export function Keycaps({ className = "" }: { className?: string }) {
-  const [pressed, setPressed] = useState<number[]>([]);
+  const [down, setDown] = useState<number[]>([]);
 
   const press = useCallback((indices: number[]) => {
     if (!indices.length) return;
-    setPressed((p) => [...new Set([...p, ...indices])]);
-    window.setTimeout(
-      () => setPressed((p) => p.filter((i) => !indices.includes(i))),
-      150,
-    );
+    setDown((d) => [...new Set([...d, ...indices])]);
   }, []);
 
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
-      const target = e.target as HTMLElement | null;
-      // Don't hijack the contact form.
-      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+  const lift = useCallback((indices: number[]) => {
+    setDown((d) => d.filter((i) => !indices.includes(i)));
+  }, []);
 
-      const key = e.key.toUpperCase();
-      const hits = LETTERS.flatMap((l, i) => (l === key ? [i] : []));
-      press(hits);
+  const matching = (key: string) =>
+    LETTERS.flatMap((l, i) => (l === key.toUpperCase() ? [i] : []));
+
+  useEffect(() => {
+    function onDown(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      press(matching(e.key));
     }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [press]);
+    function onUp(e: KeyboardEvent) {
+      lift(matching(e.key));
+    }
+    const clear = () => setDown([]);
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    window.addEventListener("blur", clear);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+      window.removeEventListener("blur", clear);
+    };
+  }, [press, lift]);
+
+  // Rail: a slab whose long axis follows the row and whose cross-section runs
+  // along the cap base's other diagonal, so the caps sit squarely on it.
+  const railA: Pt = { x: ORIGIN.x - 0.9 * STEP.x, y: ORIGIN.y - 0.9 * STEP.y };
+  const railB: Pt = { x: ORIGIN.x + 4.9 * STEP.x, y: ORIGIN.y + 4.9 * STEP.y };
+  const cross: Pt = { x: HX * 0.55, y: -HY * 0.55 };
+  const railT = 12;
+  const near = (p: Pt): Pt => ({ x: p.x - cross.x, y: p.y - cross.y });
+  const far = (p: Pt): Pt => ({ x: p.x + cross.x, y: p.y + cross.y });
+  const drop = (p: Pt): Pt => ({ x: p.x, y: p.y + railT });
 
   return (
     <svg
-      viewBox="0 0 420 300"
+      viewBox="0 0 424 296"
       className={className}
       role="img"
-      aria-label="Isometric keycaps spelling MANAV. Each cap can be pressed."
+      aria-label="Isometric keycaps spelling MANAV. Type M, A, N or V to press them."
     >
-      {/* rail */}
-      <polygon points="16,100 346,280 406,247 76,67" fill="#dcdcdc" />
-      <polygon points="16,100 346,280 346,294 16,114" fill="#bfbfbf" />
-      <polygon points="346,280 406,247 406,261 346,294" fill="#cccccc" />
+      {/* rail: top face, then the near edge for thickness */}
+      <polygon
+        points={pts(near(railA), near(railB), far(railB), far(railA))}
+        fill="#e8eaec"
+      />
+      <polygon
+        points={pts(
+          near(railA),
+          near(railB),
+          drop(near(railB)),
+          drop(near(railA)),
+        )}
+        fill="#c9cdd0"
+      />
 
       {LETTERS.map((letter, i) => {
-        const o = { x: ORIGIN.x + i * A.x, y: ORIGIN.y + i * A.y };
-        const down = pressed.includes(i);
-
-        const top = [
-          `${o.x},${o.y}`,
-          `${o.x + KEY.x},${o.y + KEY.y}`,
-          `${o.x + KEY.x * 2},${o.y}`,
-          `${o.x + KEY.x},${o.y - KEY.y}`,
-        ].join(" ");
-        // The side faces shorten as the cap sinks, so it reads as travel into
-        // the rail rather than the whole cube sliding down the screen.
-        const h = down ? H - TRAVEL : H;
-        const left = [
-          `${o.x},${o.y}`,
-          `${o.x + KEY.x},${o.y + KEY.y}`,
-          `${o.x + KEY.x},${o.y + KEY.y + h}`,
-          `${o.x},${o.y + h}`,
-        ].join(" ");
-        const right = [
-          `${o.x + KEY.x},${o.y + KEY.y}`,
-          `${o.x + KEY.x * 2},${o.y}`,
-          `${o.x + KEY.x * 2},${o.y + h}`,
-          `${o.x + KEY.x},${o.y + KEY.y + h}`,
-        ].join(" ");
+        const isDown = down.includes(i);
+        const sink = isDown ? TRAVEL : 0;
+        const base: Pt = {
+          x: ORIGIN.x + i * STEP.x,
+          y: ORIGIN.y + i * STEP.y,
+        };
+        const b = rhombus(base, 1);
+        const topC: Pt = { x: base.x, y: base.y - H + sink };
+        const t = rhombus(topC, TAPER);
 
         return (
           <g
@@ -91,31 +120,39 @@ export function Keycaps({ className = "" }: { className?: string }) {
             role="button"
             tabIndex={0}
             aria-label={`Key ${letter}`}
+            aria-pressed={isDown}
             className="cursor-pointer outline-none"
-            onClick={() => press([i])}
+            onPointerDown={() => press([i])}
+            onPointerUp={() => lift([i])}
+            onPointerLeave={() => lift([i])}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 press([i]);
               }
             }}
-            style={{
-              transform: `translateY(${down ? TRAVEL : 0}px)`,
-              transition: "transform 110ms cubic-bezier(.22,1,.36,1)",
-            }}
+            onKeyUp={() => lift([i])}
+            style={{ transition: "none" }}
           >
-            {/* a generous invisible hit area over the whole cap */}
+            {/* left face */}
             <polygon
-              points={`${o.x},${o.y - KEY.y} ${o.x + KEY.x * 2},${o.y - KEY.y} ${o.x + KEY.x * 2},${o.y + KEY.y + H} ${o.x},${o.y + KEY.y + H}`}
-              fill="transparent"
+              points={pts(b.left, b.front, t.front, t.left)}
+              fill={isDown ? "#2a2a2a" : "#313131"}
             />
-            <polygon points={left} fill={down ? "#232323" : "#2b2b2b"} />
-            <polygon points={right} fill={down ? "#161616" : "#1d1d1d"} />
-            <polygon points={top} fill={down ? "#3a3a3a" : "#464646"} />
+            {/* right face */}
+            <polygon
+              points={pts(b.front, b.right, t.right, t.front)}
+              fill={isDown ? "#1e1e1e" : "#232323"}
+            />
+            {/* top face */}
+            <polygon
+              points={pts(t.left, t.front, t.right, t.back)}
+              fill={isDown ? "#3d3d3d" : "#454545"}
+            />
             <text
-              transform={`matrix(0.881 -0.472 0.881 0.472 ${o.x + KEY.x} ${o.y})`}
-              fill="#f2f2f2"
-              fontSize="24"
+              transform={`matrix(0.881 -0.472 0.881 0.472 ${topC.x} ${topC.y})`}
+              fill="#f4f4f4"
+              fontSize="23"
               fontWeight="600"
               textAnchor="middle"
               dominantBaseline="middle"

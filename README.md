@@ -34,6 +34,16 @@ point at must be defined there or every family silently falls back to system san
 
 ## The hero keycaps
 
+**The SVG keycaps are the hero.** Typing M, A, N or V presses the matching cap
+(both A caps answer to A), as does clicking one or hitting Enter/Space while
+it's focused. Keystrokes aimed at form fields are ignored.
+
+The Spline 3D scene is built and looks good, but its interaction could not be
+made to work and it is switched off in `.env.local`. Setting
+`NEXT_PUBLIC_SPLINE_SCENE` turns it back on — it renders, but no key presses.
+Why it was abandoned is at the bottom of this file.
+
+
 There are TWO implementations and the page picks one at runtime:
 
 1. **Spline 3D** — used when `NEXT_PUBLIC_SPLINE_SCENE` is set to a published
@@ -79,3 +89,33 @@ to the reference's marker signature. Swap it in `src/app/layout.tsx`.
 
 **Pills must contrast with their card.** `Timeline` takes `cardClass` and
 `pillClass` separately — white pills on white cards disappear.
+
+
+## Why the Spline scene is switched off
+
+The scene renders correctly, and the Spline file itself is right: five
+`KeyDown` events bound to M/A/N/V plus five `MouseDown` events, all confirmed
+present in the published build via `getSplineEvents()`.
+
+What does not work is making a cap actually move:
+
+- **Spline's own `KeyDown` events never fire** through `@splinetool/react-spline`.
+  The page receives the keystroke (verified with a window listener); the scene
+  ignores it.
+- **Driving the cap from code fails too.** The handler runs (verified by
+  logging), `findObjectByName` resolves the cap, and a direct
+  `cap.position.y = n` write moves it — but any write is reverted, because the
+  scene's own state machine re-applies the base state every frame to objects
+  that carry states.
+
+Removing the states would stop the revert, but they are what the press is built
+from. Three further traps cost a lot of time and are worth knowing:
+
+- **Object proxies snapshot.** A proxy captured earlier keeps returning its old
+  value after the object has moved, so measurements read stale numbers. Always
+  re-resolve immediately before reading.
+- **Look objects up at call time.** Right after `onLoad` the runtime has not
+  finished registering the scene graph, so anything resolved there is undefined.
+- **Three separate snapshots.** The editor, the Public URL viewer, and the code
+  export are independent. "Update Public URL" does not refresh the
+  `.splinecode`; that needs Export -> Code -> Generate Draft -> Promote.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Application } from "@splinetool/runtime";
 import { Keycaps } from "./Keycaps";
@@ -30,10 +30,20 @@ const CAP_NAMES = [
   "Keycap V 5",
 ];
 
+// Typing a letter presses the matching cap. Both A caps answer to A.
+const KEY_TO_CAPS: Record<string, string[]> = {
+  M: ["Keycap M 1"],
+  A: ["Keycap A 2", "Keycap A 4"],
+  N: ["Keycap N 3"],
+  V: ["Keycap V 5"],
+};
+
+const PRESS_DEPTH = 12;
+const PRESS_MS = 80;
 const RELEASE_MS = 150;
-// The scene's press tween runs 110ms. A click's pointerup lands ~10ms after
-// pointerdown, so releasing immediately cancels the press before it travels
-// and the cap never visibly moves. Let the press finish first.
+// A click's pointerup lands ~10ms after pointerdown while the scene's own
+// MouseDown tween runs 80ms, so releasing immediately cancels the press before
+// the cap travels. Hold long enough for it to land.
 const PRESS_HOLD_MS = 160;
 
 type SceneObject = { position: { x: number; y: number; z: number } };
@@ -47,65 +57,114 @@ type SceneObject = { position: { x: number; y: number; z: number } };
  */
 export function SplineKeycaps({ className = "" }: { className?: string }) {
   const [failed, setFailed] = useState(false);
-  const [ready, setReady] = useState(false);
-  const cleanupRef = useRef<(() => void) | null>(null);
+  const [app, setApp] = useState<Application | null>(null);
+  const ready = app !== null;
 
-  useEffect(() => () => cleanupRef.current?.(), []);
+  // Keyed to the app, NOT to mount: StrictMode mounts, unmounts and remounts in
+  // development, and onLoad only ever fires once. Registering these in a
+  // mount-only effect meant the unmount tore the listeners off for good.
+  useEffect(() => {
+    if (!app) return;
 
-  function onLoad(app: Application) {
-    if (process.env.NODE_ENV !== "production") {
-      (window as unknown as { __spline?: Application }).__spline = app;
+    // Resolve objects at CALL time, not here: right after onLoad the runtime
+    // has not finished registering the scene graph, so looking them up now
+    // yields nothing and every later write silently targets undefined.
+    const rest = new Map<string, number>();
+    const frames = new Map<string, number>();
+
+    function getCap(name: string): SceneObject | undefined {
+      const cap = app!.findObjectByName(name) as SceneObject | undefined;
+      if (cap && !rest.has(name)) rest.set(name, cap.position.y);
+      return cap;
     }
 
-    setReady(true);
-
-    const caps = CAP_NAMES.map(
-      (n) => app.findObjectByName(n) as SceneObject | undefined,
-    ).filter((c): c is SceneObject => Boolean(c));
-    const rest = new Map(caps.map((c) => [c, c.position.y]));
-
-    // The scene's press transitions (KeyDown for M/A/N/V, MouseDown for clicks)
-    // drive a cap down but never bring it back, so every pressed key would stay
-    // sunk. Ease them home on release — that's what turns a latch into a
-    // keypress.
-    let raf = 0;
-    let holdTimer = 0;
-    function release() {
-      cancelAnimationFrame(raf);
-      const from = new Map(caps.map((c) => [c, c.position.y]));
+    function tweenTo(name: string, offset: number, ms: number) {
+      const cap = getCap(name);
+      if (!cap) return;
+      const targetY = (rest.get(name) ?? cap.position.y) + offset;
+      cancelAnimationFrame(frames.get(name) ?? 0);
+      const from = cap.position.y;
       const start = performance.now();
       const step = (now: number) => {
-        const t = Math.min(1, (now - start) / RELEASE_MS);
+        const t = Math.min(1, (now - start) / ms);
         const eased = 1 - Math.pow(1 - t, 3);
-        for (const c of caps) {
-          const a = from.get(c)!;
-          const b = rest.get(c)!;
-          if (a !== b) c.position.y = a + (b - a) * eased;
-        }
-        if (t < 1) raf = requestAnimationFrame(step);
+        cap.position.y = from + (targetY - from) * eased;
+        if (t < 1) frames.set(name, requestAnimationFrame(step));
       };
-      raf = requestAnimationFrame(step);
+      frames.set(name, requestAnimationFrame(step));
     }
 
-    const scheduleRelease = () => {
-      clearTimeout(holdTimer);
-      holdTimer = window.setTimeout(release, PRESS_HOLD_MS);
-    };
+    // When each cap started travelling down, so a release can wait for it.
+    const pressedAt = new Map<string, number>();
+    const releaseTimers = new Set<number>();
 
+    // Prime the rest positions once the runtime is settled.
+    const prime = window.setTimeout(() => CAP_NAMES.forEach(getCap), 400);
+
+    // Spline's own KeyDown events never fire through the React runtime — the
+    // page receives the keystroke and the scene ignores it — so the keyboard
+    // press is driven here.
+    function onKeyDown(e: KeyboardEvent) {
+      if (process.env.NODE_ENV !== "production") {
+        const w = window as unknown as { __kbLog?: string[] };
+        (w.__kbLog ??= []).push("down:" + e.key);
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      for (const n of KEY_TO_CAPS[e.key.toUpperCase()] ?? []) {
+        pressedAt.set(n, performance.now());
+        tweenTo(n, -PRESS_DEPTH, PRESS_MS);
+      }
+    }
+
+    // A tap's keyup lands almost immediately after keydown, so releasing at once
+    // cancels the press before the cap has travelled and nothing visibly moves.
+    // Hold each cap down until its press has actually completed.
+    function onKeyUp(e: KeyboardEvent) {
+      for (const n of KEY_TO_CAPS[e.key.toUpperCase()] ?? []) {
+        const elapsed = performance.now() - (pressedAt.get(n) ?? 0);
+        const wait = Math.max(0, PRESS_HOLD_MS - elapsed);
+        const id = window.setTimeout(() => {
+          releaseTimers.delete(id);
+          tweenTo(n, 0, RELEASE_MS);
+        }, wait);
+        releaseTimers.add(id);
+      }
+    }
+
+    // Clicks go through the scene's own MouseDown transition, which drives a
+    // cap down and never brings it back; this is what lifts it again.
+    let holdTimer = 0;
+    function releaseAll() {
+      for (const n of CAP_NAMES) tweenTo(n, 0, RELEASE_MS);
+    }
+    function scheduleRelease() {
+      clearTimeout(holdTimer);
+      holdTimer = window.setTimeout(releaseAll, PRESS_HOLD_MS);
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      (window as unknown as { __kb?: unknown }).__kb = { tweenTo, getCap };
+    }
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
     window.addEventListener("pointerup", scheduleRelease);
     window.addEventListener("pointercancel", scheduleRelease);
-    window.addEventListener("keyup", scheduleRelease);
-    // A key held down auto-repeats; without this the cap would re-press forever.
-    window.addEventListener("blur", scheduleRelease);
-    cleanupRef.current = () => {
-      cancelAnimationFrame(raf);
+    window.addEventListener("blur", releaseAll);
+
+    return () => {
+      for (const id of frames.values()) cancelAnimationFrame(id);
       clearTimeout(holdTimer);
+      clearTimeout(prime);
+      for (const id of releaseTimers) clearTimeout(id);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("pointerup", scheduleRelease);
       window.removeEventListener("pointercancel", scheduleRelease);
-      window.removeEventListener("keyup", scheduleRelease);
-      window.removeEventListener("blur", scheduleRelease);
+      window.removeEventListener("blur", releaseAll);
     };
-  }
+  }, [app]);
 
   if (!SCENE_URL || failed || (!isSceneFile && !isViewer)) {
     return <Keycaps className={className} />;
@@ -119,9 +178,7 @@ export function SplineKeycaps({ className = "" }: { className?: string }) {
           src={SCENE_URL}
           title="Interactive 3D keycaps spelling MANAV"
           loading="lazy"
-          onLoad={() => setReady(true)}
-          className="h-full w-full border-0 transition-opacity duration-700"
-          style={{ opacity: ready ? 1 : 0 }}
+          className="h-full w-full border-0"
           allow="autoplay"
         />
       </div>
@@ -131,14 +188,23 @@ export function SplineKeycaps({ className = "" }: { className?: string }) {
   return (
     <div
       className={`relative ${className}`}
-      aria-label="Interactive 3D keycaps spelling MANAV"
+      aria-label="Interactive 3D keycaps spelling MANAV. Type M, A, N or V."
     >
       {!ready ? <Keycaps className="absolute inset-0 h-full w-full" /> : null}
       <div
         className="h-full w-full transition-opacity duration-700"
         style={{ opacity: ready ? 1 : 0 }}
       >
-        <Spline scene={SCENE_URL} onLoad={onLoad} onError={() => setFailed(true)} />
+        <Spline
+          scene={SCENE_URL}
+          onLoad={(a: Application) => {
+            if (process.env.NODE_ENV !== "production") {
+              (window as unknown as { __spline?: Application }).__spline = a;
+            }
+            setApp(a);
+          }}
+          onError={() => setFailed(true)}
+        />
       </div>
     </div>
   );
