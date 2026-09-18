@@ -31,6 +31,10 @@ const CAP_NAMES = [
 ];
 
 const RELEASE_MS = 150;
+// The scene's press tween runs 110ms. A click's pointerup lands ~10ms after
+// pointerdown, so releasing immediately cancels the press before it travels
+// and the cap never visibly moves. Let the press finish first.
+const PRESS_HOLD_MS = 160;
 
 type SceneObject = { position: { x: number; y: number; z: number } };
 
@@ -64,6 +68,7 @@ export function SplineKeycaps({ className = "" }: { className?: string }) {
     // back, so every key would stay sunk. Ease them home on release — that's
     // what turns a latch into a keypress.
     let raf = 0;
+    let holdTimer = 0;
     function release() {
       cancelAnimationFrame(raf);
       const from = new Map(caps.map((c) => [c, c.position.y]));
@@ -81,12 +86,18 @@ export function SplineKeycaps({ className = "" }: { className?: string }) {
       raf = requestAnimationFrame(step);
     }
 
-    window.addEventListener("pointerup", release);
-    window.addEventListener("pointercancel", release);
+    const scheduleRelease = () => {
+      clearTimeout(holdTimer);
+      holdTimer = window.setTimeout(release, PRESS_HOLD_MS);
+    };
+
+    window.addEventListener("pointerup", scheduleRelease);
+    window.addEventListener("pointercancel", scheduleRelease);
     cleanupRef.current = () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("pointerup", release);
-      window.removeEventListener("pointercancel", release);
+      clearTimeout(holdTimer);
+      window.removeEventListener("pointerup", scheduleRelease);
+      window.removeEventListener("pointercancel", scheduleRelease);
     };
   }
 
