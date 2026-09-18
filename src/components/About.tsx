@@ -1,4 +1,5 @@
-import { about, achievements, education, technologies } from "@/content/profile";
+import Image from "next/image";
+import { about, achievements, education, technologies, profile } from "@/content/profile";
 import { Reveal } from "./Reveal";
 
 export function About() {
@@ -9,8 +10,22 @@ export function About() {
           <h2 className="section-title">About Me</h2>
         </Reveal>
 
-        <div className="mt-12 grid gap-12 md:mt-16 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
+        {/* Portrait beside the prose, stats across the full width below — the
+            stat row is too wide to sit next to a photo without crowding both. */}
+        <div className="mt-12 grid gap-10 md:mt-16 lg:grid-cols-[minmax(0,20rem)_1fr] lg:gap-16">
           <Reveal>
+            <Image
+              src="/manav.jpg"
+              alt={`${profile.name}, ${profile.title}`}
+              width={1000}
+              height={1250}
+              sizes="(min-width: 1024px) 20rem, 100vw"
+              priority={false}
+              className="w-full rounded-lg object-cover"
+            />
+          </Reveal>
+
+          <Reveal delay={100}>
             <div>
               <p className="text-[clamp(1.25rem,2.4vw,1.5rem)] leading-snug font-light text-ink-2">
                 {about.lead}
@@ -22,28 +37,28 @@ export function About() {
               ))}
             </div>
           </Reveal>
-
-          <Reveal delay={120}>
-            <div className="grid grid-cols-2 gap-4 sm:gap-5">
-              {about.stats.map((s) => (
-                <div
-                  key={s.label}
-                  className="flex flex-col items-center justify-center rounded-lg bg-page px-4 py-12"
-                >
-                  <div
-                    className="text-[2.5rem] leading-none font-bold text-ink"
-                    style={{ fontFamily: "var(--font-display)" }}
-                  >
-                    {s.value}
-                  </div>
-                  <div className="mt-2 text-center text-[0.9375rem] text-ink-3">
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Reveal>
         </div>
+
+        <Reveal delay={80}>
+          <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
+            {about.stats.map((s) => (
+              <div
+                key={s.label}
+                className="flex flex-col items-center justify-center rounded-lg bg-page px-4 py-10"
+              >
+                <div
+                  className="text-[2.5rem] leading-none font-bold text-ink"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  {s.value}
+                </div>
+                <div className="mt-2 text-center text-[0.9375rem] text-ink-3">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
 
         {/* Education and achievements live inside About — context, not sections. */}
         <div className="mt-16 grid gap-12 border-t border-line pt-10 lg:grid-cols-2 lg:gap-16">

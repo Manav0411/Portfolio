@@ -21,6 +21,8 @@ pnpm lint
 | `src/components/Timeline.tsx` | Shared alternating timeline for Experience and Projects. |
 | `public/Manav_Goel_Resume.pdf` | The résumé the Contact section links to. |
 | `resumes/` | Source résumés, not published. |
+| `photos/` | Original photo the About portrait was cropped from. |
+| `public/manav.jpg` | The About portrait — 1000x1250, cropped to 4:5. |
 
 ## Notes
 
