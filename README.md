@@ -26,9 +26,19 @@ pnpm lint
 
 ## Notes
 
-**The contact form has no backend.** Submitting opens the visitor's mail client
-with the message composed. To make it post somewhere instead, replace the
-`onSubmit` handler in `src/components/Contact.tsx`.
+**The contact form sends real email** via Resend (`src/app/api/contact/route.ts`).
+It needs `RESEND_API_KEY` in `.env.local` for local dev and in Vercel's project
+env for production — without it the route returns 500 and the form shows an
+error with your address as a fallback.
+
+Mail goes from `onboarding@resend.dev`, Resend's shared sender, which needs no
+DNS but only delivers to the address owning the Resend account. `reply_to` is
+set to the visitor, so replying in the inbox answers them. To send from your own
+address instead, verify a domain in Resend and change `FROM` in the route.
+
+The form is **not** wired through the Vercel Marketplace integration: that path
+refuses to provision a free plan into an account that already belongs to a
+Resend team, which yours does.
 
 **Font variables go on `<html>`, not `<body>`.** Tailwind's `@theme` resolves
 `--font-sans` / `--font-display` / `--font-script` at `:root`, so the faces they

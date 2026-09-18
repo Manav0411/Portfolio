@@ -24,7 +24,7 @@ export const about = {
     "I pick the right tool for the problem: Python for AI/ML and APIs, Next.js and React for the web, Postgres for anything that has to be correct. I'm finishing my B.Tech at USICT, GGSIPU and looking for a full-time role in 2027.",
   ],
   stats: [
-    { value: "5+", label: "AI Projects" },
+    { value: "6+", label: "Projects" },
     { value: "2", label: "Internships" },
     { value: "700+", label: "DSA Problems" },
     { value: "25+", label: "Technologies" },

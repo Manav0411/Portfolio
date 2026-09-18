@@ -7,14 +7,33 @@ export function Contact() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [company, setCompany] = useState(""); // honeypot
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
+    "idle",
+  );
+  const [error, setError] = useState("");
 
-  // No backend: submitting opens the visitor's mail client with the message
-  // already composed. Honest about where it goes, and nothing to keep running.
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const subject = encodeURIComponent(`Portfolio enquiry from ${name || "someone"}`);
-    const body = encodeURIComponent(`${message}\n\n— ${name}\n${email}`);
-    window.location.href = `mailto:${profile.email}?subject=${subject}&body=${body}`;
+    if (status === "sending") return;
+    setStatus("sending");
+    setError("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message, company }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Something went wrong.");
+      setStatus("sent");
+      setName("");
+      setEmail("");
+      setMessage("");
+    } catch (err) {
+      setStatus("error");
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    }
   }
 
   const field =
@@ -30,7 +49,7 @@ export function Contact() {
         </p>
 
         <div className="mt-14 grid gap-12 lg:grid-cols-[1fr_1fr] lg:gap-20">
-          <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          <form onSubmit={onSubmit} className="relative flex flex-col gap-4">
             <label className="sr-only" htmlFor="c-name">Name</label>
             <input
               id="c-name"
@@ -60,9 +79,39 @@ export function Contact() {
               onChange={(e) => setMessage(e.target.value)}
               required
             />
-            <button type="submit" className="btn btn-solid mt-1 w-full">
-              Send Message
+            {/* Honeypot — hidden from people, tempting to bots. */}
+            <input
+              type="text"
+              name="company"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              className="pointer-events-none absolute -left-[9999px] h-0 w-0 opacity-0"
+            />
+
+            <button
+              type="submit"
+              disabled={status === "sending"}
+              className="btn btn-solid mt-1 w-full disabled:opacity-60"
+            >
+              {status === "sending" ? "Sending…" : "Send Message"}
             </button>
+
+            <p
+              role="status"
+              aria-live="polite"
+              className={`min-h-[1.25rem] text-[0.875rem] ${
+                status === "error" ? "text-ink-2" : "text-ink-3"
+              }`}
+            >
+              {status === "sent"
+                ? "Thanks — that reached me. I'll reply to your email."
+                : status === "error"
+                  ? `${error} You can also email me at ${profile.email}.`
+                  : ""}
+            </p>
           </form>
 
           <div>
