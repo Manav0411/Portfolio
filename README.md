@@ -22,7 +22,7 @@ pnpm lint
 | `public/Manav_Goel_Resume.pdf` | The résumé the Contact section links to. |
 | `resumes/` | Source résumés, not published. |
 | `photos/` | Original photo the About portrait was cropped from. |
-| `public/manav-portrait.jpg` | The About portrait — greyscale, 1000x1250, 4:5. |
+| `public/manav-avatar.jpg` | The About portrait — greyscale, square, shown as a circle. |
 
 ## Notes
 

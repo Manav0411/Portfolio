@@ -12,16 +12,16 @@ export function About() {
 
         {/* Portrait beside the prose, stats across the full width below — the
             stat row is too wide to sit next to a photo without crowding both. */}
-        <div className="mt-12 grid gap-10 md:mt-16 lg:grid-cols-[minmax(0,20rem)_1fr] lg:gap-16">
+        <div className="mt-12 grid gap-10 md:mt-16 lg:grid-cols-[minmax(0,15rem)_1fr] lg:gap-16">
           <Reveal>
             <Image
-              src="/manav-portrait.jpg"
+              src="/manav-avatar.jpg"
               alt={`${profile.name}, ${profile.title}`}
-              width={1000}
-              height={1250}
-              sizes="(min-width: 1024px) 20rem, 100vw"
+              width={800}
+              height={800}
+              sizes="(min-width: 1024px) 15rem, 12rem"
               priority={false}
-              className="w-full rounded-lg object-cover"
+              className="aspect-square w-48 rounded-full object-cover lg:w-full"
             />
           </Reveal>
 
