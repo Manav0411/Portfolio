@@ -15,7 +15,7 @@ export function About() {
         <div className="mt-12 grid gap-10 md:mt-16 lg:grid-cols-[minmax(0,20rem)_1fr] lg:gap-16">
           <Reveal>
             <Image
-              src="/manav.jpg"
+              src="/manav-portrait.jpg"
               alt={`${profile.name}, ${profile.title}`}
               width={1000}
               height={1250}
